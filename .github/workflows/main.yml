@@ -1,10 +1,9 @@
 name: Look4Sat CI
 
-
 on:
   push:
     tags:
-      - v**
+      - '**'
 
 jobs:
   deploy:
@@ -24,7 +23,6 @@ jobs:
           chmod +x ./gradlew
           ./gradlew assembleRelease
           ./gradlew bundleRelease
-
       - name: Sign APK
         uses: r0adkll/sign-android-release@v1
         id: sign_apk
@@ -53,7 +51,6 @@ jobs:
         run: |
           mv ${{steps.sign_apk.outputs.signedReleaseFile}} app/build/outputs/apk/release/look4sat.apk
           mv ${{steps.sign_bundle.outputs.signedReleaseFile}} app/build/outputs/apk/release/look4sat.aab
-
       - name: Deploy Bundle to Play Store
         uses: r0adkll/upload-google-play@v1
         with:
