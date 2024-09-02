@@ -13,13 +13,13 @@ on:
       - '*'
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Latest Commit
         uses: actions/checkout@v4
 
-      - name: Setup java environment
+      - name: Setup Java Environment
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -30,25 +30,8 @@ jobs:
           chmod +x ./gradlew
           ./gradlew assembleRelease
 
-      - name: Prepare Keystore
-        run: |
-          echo "${{ secrets.KEY_STORE }}" | base64 --decode > app/build/outputs/apk/release/signingKey.jks
-
-      - name: Align APK (Optional but recommended)
-        run: |
-          zipalign -v -p 4 app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release-unsigned-aligned.apk
-
-      - name: Sign APK
-        run: |
-          /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign --ks app/build/outputs/apk/release/signingKey.jks --ks-key-alias ${{ secrets.KEY_ALIAS }} --ks-pass pass:${{ secrets.KEY_STORE_PASSWORD }} --key-pass pass:${{ secrets.KEY_PASSWORD }} --out app/build/outputs/apk/release/app-release-signed.apk app/build/outputs/apk/release/app-release-unsigned-aligned.apk
-
-      - name: Verify APK Signature
-        run: |
-          /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner verify app/build/outputs/apk/release/app-release-signed.apk
-
-      - name: Create GitHub Release
-        uses: ncipollo/release-action@v1
+      - name: Archive APK
+        uses: actions/upload-artifact@v3
         with:
-          artifacts: "app/build/outputs/apk/release/app-release-signed.apk"
-          bodyFile: fastlane/metadata/android/en-US/whatsnew/whatsnew-en-US
-          token: ${{ secrets.RELEASE_TOKEN }}
+          name: Unsigned APK
+          path: app/build/outputs/apk/release/app-release-unsigned.apk
