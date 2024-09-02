@@ -7,11 +7,12 @@
 
 name: Gradle Package
 
+
 on:
   push:
     branches:
       - '*'
-      
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -25,43 +26,45 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Assemble APK and Bundle
+      - name: Assemble APK
         run: |
           chmod +x ./gradlew
           ./gradlew assembleRelease
-          ./gradlew bundleRelease
-      - name: Sign APK
-        uses: r0adkll/sign-android-release@v1
-        id: sign_apk
-        with:
-          releaseDirectory: app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.KEY_STORE }}
-          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-          alias: ${{ secrets.KEY_ALIAS }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-        env:
-          BUILD_TOOLS_VERSION: "34.0.0"
 
-      - name: Sign Bundle
-        uses: r0adkll/sign-android-release@v1
-        id: sign_bundle
-        with:
-          releaseDirectory: app/build/outputs/bundle/release
-          signingKeyBase64: ${{ secrets.KEY_STORE }}
-          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-          alias: ${{ secrets.KEY_ALIAS }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-        env:
-          BUILD_TOOLS_VERSION: "34.0.0"
-
-      - name: Rename APK and Bundle
+      - name: Prepare Keystore
         run: |
-          mv ${{steps.sign_apk.outputs.signedReleaseFile}} app/build/outputs/apk/release/look4sat.apk
-          mv ${{steps.sign_bundle.outputs.signedReleaseFile}} app/build/outputs/apk/release/look4sat.aab
+          echo "${{ secrets.KEY_STORE }}" | base64 --decode > app/build/outputs/apk/release/signingKey.jks
 
-      - name: Create release
+      - name: Align APK (Optional but recommended)
+        run: |
+          zipalign -v -p 4 app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release-unsigned-aligned.apk
+
+      - name: Sign APK
+        run: |
+          /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign --ks app/build/outputs/apk/release/signingKey.jks --ks-key-alias ${{ secrets.KEY_ALIAS }} --ks-pass pass:${{ secrets.KEY_STORE_PASSWORD }} --key-pass pass:${{ secrets.KEY_PASSWORD }} --out app/build/outputs/apk/release/app-release-signed.apk app/build/outputs/apk/release/app-release-unsigned-aligned.apk
+
+      - name: Verify APK Signature
+        run: |
+          /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner verify app/build/outputs/apk/release/app-release-signed.apk
+
+      - name: Deploy to Google Play (if applicable)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
+          packageName: com.rtbishop.look4sat
+          releaseFiles: app/build/outputs/apk/release/app-release-signed.apk
+          track: production
+          whatsNewDirectory: fastlane/metadata/android/en-US/whatsnew
+
+      - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
+          artifacts: "app/build/outputs/apk/release/app-release-signed.apk"
+          bodyFile: fastlane/metadata/android/en-US/whatsnew/whatsnew-en-US
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+        TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
           artifacts: "app/build/outputs/apk/release/look4sat.apk,app/build/outputs/apk/release/look4sat.aab"
           bodyFile: fastlane/metadata/android/en-US/whatsnew/whatsnew-en-US
           token: ${{ secrets.RELEASE_TOKEN }}
