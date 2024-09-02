@@ -7,7 +7,6 @@
 
 name: Gradle Package
 
-
 on:
   push:
     branches:
@@ -47,24 +46,9 @@ jobs:
         run: |
           /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner verify app/build/outputs/apk/release/app-release-signed.apk
 
-      - name: Deploy to Google Play (if applicable)
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
-          packageName: com.rtbishop.look4sat
-          releaseFiles: app/build/outputs/apk/release/app-release-signed.apk
-          track: production
-          whatsNewDirectory: fastlane/metadata/android/en-US/whatsnew
-
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           artifacts: "app/build/outputs/apk/release/app-release-signed.apk"
-          bodyFile: fastlane/metadata/android/en-US/whatsnew/whatsnew-en-US
-          token: ${{ secrets.RELEASE_TOKEN }}
-
-        TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-          artifacts: "app/build/outputs/apk/release/look4sat.apk,app/build/outputs/apk/release/look4sat.aab"
           bodyFile: fastlane/metadata/android/en-US/whatsnew/whatsnew-en-US
           token: ${{ secrets.RELEASE_TOKEN }}
