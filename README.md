@@ -1,5 +1,8 @@
 # Look4Sat: 卫星追踪器
 
+## 本仓库修复内容:
+* 1.修复小米系统日历无法添加问题
+
 [![Look4Sat CI](https://github.com/rt-bishop/Look4Sat/actions/workflows/main.yml/badge.svg)](https://github.com/rt-bishop/Look4Sat/actions/workflows/main.yml)
 
 [<img src="https://play.google.com/intl/en_gb/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=com.rtbishop.look4sat)
